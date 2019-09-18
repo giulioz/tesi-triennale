@@ -1,10 +1,10 @@
-# Tesi di Laurea
+# Tesi di Laurea Baccega Sandro
 
 ## Refactoring di una pipeline di continuous integration per il build e il deploy automatico di plugin Liferay
 
-Una pipeline Jenkins per il CI/CD (Continuous Integration/Continuous Delivery) di plugins Liferay utlizzando un cluster Kubernetes come ambiente di deploy automatico. Grazie ad essa è possibile eseguire una serie di operazioni automatiche come: analisi statica del codice, versionamento, building, backup dell'eseguibile, deploy di un container con il plugin appena rilasciato.
+### Abstract
 
-
+Delle pipeline Jenkins per il CI/CD (Continuous Integration/Continuous Delivery) di plugins Liferay utlizzando un cluster Kubernetes come ambiente di deploy automatico. Grazie ad esse è possibile eseguire una serie di operazioni automatiche come: analisi statica del codice, versionamento, building, backup dell'eseguibile, deploy di un Docker container con il plugin appena rilasciato.
 
 
 
@@ -56,7 +56,7 @@ Infine per eseguire una Docker Image (quindi per creare un Container), è necess
 
 ### Docker Engine
 
-Docker Engine è un programma eseguibile su vari sistemi operativi Linux *(CentOS, Debian, Fedora, Oracle Linux, RHEL, SUSE e Ubuntu)** e *Windows Server** che permette una semplice gestione dei Containers. Docker Engine in particolare gestisce l'interfaccia tra l'host/utente con i vari Containers.
+Docker Engine è un programma eseguibile su vari sistemi operativi Linux *(CentOS, Debian, Fedora, Oracle Linux, RHEL, SUSE e Ubuntu)* e *Windows Server* che permette una semplice gestione dei Containers. Docker Engine in particolare gestisce l'interfaccia tra l'host/utente con i vari Containers.
 
 Dato che è stato sviluppato con la sicurezza delle applicazioni come obiettivo, dispone di sistemi di sicurezza come encryption e metodi per la certificazione delle immagini (per evitare di eseguire immagini contraffatte).
 
@@ -91,9 +91,14 @@ Se si desidera creare un container per un servizio di cui si ha bisogno, di soli
 
 ## Nexus
 
+- group names
+
 ## Sonar
 
-## Git
+## Git ?
+
+- repository
+- branch
 
 ## Jenkins
 
@@ -106,19 +111,96 @@ Se si desidera creare un container per un servizio di cui si ha bisogno, di soli
 
 ## Generic Release Pipeline
 
-Il primo problema da risolvere è stato la creazione della Generic Release Pipeline, ovvero una Jenkins pipeline dedicata al rilascio di uno o più plugin Liferay di un qualsiasi progetto.
+Il primo problema da risolvere è stato il miglioramento di una Jenkins pipeline dedicata al rilascio di un plugin Liferay di un qualsiasi progetto per la quale è stata configurata. Tutto questo si è tradotto nella creazione della Generic Release Pipeline.
 
-Questa pipeline è stata creata a partire da un altra pipeline pre-esistente con lo stesso obbiettivo finale, ma che è stata creata con altri  obbiettivi e aggiornata man mano con nuove features, rendendola molto lenta, soprattutto perchè non prevedeva nessuna forma di *multithreading*, e molto complicata, in quanto è stata creata da molte persone diverse che hanno ripetuto molte parti di essa inutilmente. 
+### Confronto Generic Release Pipeline e vecchia Pipeline
+
+In particolare, la vecchia pipeline permetteva di: 
+
+- Eseguire un insieme di test con *Sonar* che il codice deve superare in modo da garantirne la qualità
+- Versionare automaticamente il modulo
+- Storing a lungo termine in una *Nexus* repository, in modo da avere tutti gli eseguibili delle varie versioni del plugin in storage, garantendo così un veloce rollback nel caso in cui la nuova versione del plugin presenti qualche problema.
+- Commiting sul branch **release** della repository in modo da separare il codice funzionante dal codice in production.
+- Inviare un report sul rilascio del plugin all'utente 
 
 Nelle prime versioni della Generic Release Pipeline, quando aveva raggiunto la quantità di features della vecchia versione, il codice era intorno alle 700 righe con codice in più per eseguire certi stadi in parallelo , mentre la controparte aveva più di 1400 righe non avendo nessun supporto per eseguire codice in parallelo.
 
-L'obiettivo della pipeline consiste nel: 
+Oltre alle features della vecchia pipeline ne sono state aggiunte molte altre:
 
-- Eseguire un insieme di test *Sonar* che il codice deve superare in modo da garantire la qualità del codice
-- Storing a lungo termine in una *Nexus* repository, in modo da avere tutti gli eseguibili delle varie versioni del plugin in storage, garantendo così un veloce rollback nel caso in cui la nuova versione del plugin presenti qualche problema.
-- Commiting sul branch **release** della repository in modo da separare il codice funzionante dal codice in production.
-- Uploading su un container in esecuzione nel caso in cui si voglia automaticamente esseguire un live test del nuovo plugin su un Docker container già istanziato.
-- Inviare un report sul rilascio del plugin all'utente  
+- Rilascio di Temi e Layout (Prima erano rilasciabili solo i moduli)
+- Avere una pipeline unica per tutti i progetti invece di avere pipeline tutte uguali per ogni progetto
+- Possibilità di rilasciare multipli plugins contemporaneamente
+- Risoluzione di problemi di dipendenze dovuti al rilascio contemporaneo
+- Uploading del plugin rilasciato in un Docker Container già istanziato con la corretta versione di Liferay
+- Test via Telnet dello stato di installazione del plugin
+- Error reporting per facilitarne il debug
+
+### Features
+
+#### Rilascio di Temi e Layout
+
+La più grande limitazione della vecchia Pipeline era il poter rilasciare solo moduli Liferay, non permettendo quindi il rilascio di Temi e Layout.
+
+Il motivo principale di questa grave mancanza era la sua difficoltà, infatti il rilascio di temi è profondamente diverso dal rilascio di moduli, in quanto i temi vanno compilati utilizzando **NodeJS** al posto di **Gradle**.
+
+Infatti per distinguerli è stato necessario creare una superclasse *Plugin* e delle sottoclassi *Module*, *Theme* e *Layout*.
+
+Grazie a Groovy infatti è possibile utlizzare il **dynamic dispatching** per creare una semplice struttura dati che contiene Plugins ed inserirci delle sottoclassi in modo da rendere il codice molto più semplice e chiaro.
+
+Per esempio: 
+
+```groovy
+// Data entry
+def dataStructure = new DataStruction<Plugin>()
+dataStructure.add(new Module())
+dataStructure.add(new Theme())
+// Pipeline logic
+for(plugin in dataStruction){
+  plugin.compile()
+}
+// Output: 
+// Il modulo verrà compilato con gradle
+// Il tema verrà compilato con NodeJS
+```
+
+Questo semplice esempio dimostra come diventa semplice la logica con una struttura dati di questo tipo, anche se ci possono esseri molti tipi diversi di plugin. 
+
+ 
+
+Per il compile dei temi è stato necessario fare un analisi sugli strumenti da utilizzare.
+
+Il problema principale da risolvere era che i temi Liferay variano la versione di NodeJS in base al progetto (ovviamente un progetto più vecchio avrà una versione di Node meno recente), quindi lo strumento scelto deve andar bene con tutte le versioni di Node.
+
+Alla fine c'erano 3 scelte:
+
+- Utilizzare un Docker Container con NodeJS
+- Utilizzare NVM (Node Version Manager)
+- Utlizzare il NodeJS Plugin di Jenkins
+
+Utilizzare un Docker Container con un immagine di NodeJS:
+
+|                             PRO                              |                            CONTRO                            |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+|   Si può utilizzare qualunque versione di Node si desideri   | Avviare un container per ogni tema che si rilascia è un dispendio di risorse non indifferente |
+| Facilmente parallelizzabile indipendentemente da quante pipeline sono in esecuzione |                                                              |
+
+Utilizzare NVM (Node Version Manager):
+
+|      PRO       |                            CONTRO                            |
+| :------------: | :----------------------------------------------------------: |
+|  Molto veloce  | Potrebbe causare problemi se si avviano più pipeline in contemporaneo, <br />dato che NVM cambia la versione globale di NodeJS. |
+| Molto semplice |                                                              |
+
+Utilizzare NodeJS Plugin for Jenkins:
+
+|       PRO        |                            CONTRO                            |
+| :--------------: | :----------------------------------------------------------: |
+|      Veloce      |      Molto difficile trovare documentazione al riguardo      |
+| Parallelizzabile | Necessario installare a mano ogni versione nuova di cui si ha bisogno |
+
+Alla fine quest'ultima si è rivelata l'opzione migliore.
+
+### Funzionamento
 
 Per funzionare la pipeline ha bisogno di due cose:
 
@@ -201,28 +283,19 @@ test-module;test-theme;test-layout
 
   - **USING_SONAR** [*true/false*]:
 
-    If you want to use SONAR for code analysis. <br>
-    **It's optional if you are only if you are not releasing modules**
+    Se vuoi usare *Sonar* per l'analisi del codice.
 
   - **SENDING_EMAIL** [*true/false*]:
 
-    If you want to receive an email in case of success/error of the pipeline (to EMAIL_DEVOPS address)
+    Se vuoi ricevere un email di successo/fallimento della pipeline.
 
   - **CONTAINER_URL**:
 
-    Specify the url of the active docker container that you want to upload the builded plugin into.
+    Specifica l'url del Docker Container nella quale uploadare il plugin una volta rilasciato. 
 
   - **TELNET_CHECK** [*true/false*]:
 
-    If you want to check the status of the plugin that you just installed on the container
-
-
-
-```
-
-```
-
-
+    Se vuoi controllare lo stato di installazione del plugin all'interno del Docker Container, tramite telnet.
 
 Ora inizieremo a descrivere ogni *step* della pipeline, spiegheremo che problema risolve e come lo risolve.
 
@@ -259,6 +332,8 @@ checkout(
 
 
 
+
+
 - Finding Plugins
 - Copy Plugins
 - Analyze with Sonar
@@ -282,4 +357,4 @@ checkout(
 
 ## Souces
 
-https://www.docker.com/
+https://www.docker.com/ 
