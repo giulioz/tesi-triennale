@@ -117,6 +117,8 @@ Se si desidera creare un container per un servizio di cui si ha bisogno, di soli
 - steps
 - Groovy
 
+## Postman
+
 
 
 ## Generic Release Pipeline
@@ -266,7 +268,29 @@ E poi si procedeva a compilare tutti i plugins in sequenza a seconda della prior
 
 Per ottenere il campo `priority` è stato necessario cercare manualmente nelle dipendenze contenute nel file `build.gradle` di ogni modulo e confrontarle con la lista dei plugin in rilascio.  
 
-#### Uploading del plugin rilasciato in un Docker Container già istanziato con la corretta versione di Liferay
+#### Uploading del plugin rilasciato in un Docker Container
+
+La prima feature rigurdante il Continuous Delivery del progetto è stato l'uploading ed installazione dei plugins appena rilasciati in un Docker Container che era già stato istanziato con la corretta versione di Liferay in un cluster Kubernetes.
+
+Il problema principale si è rivelato il modo in cui installarlo, dato che normalmente basterebbe copiare gli eseguibili dentro la cartella `deploy` dell'installazione di Liferay, ma data la natura del Cluster sarebbe impossibile.
+
+L'unica alternativa è stata sfruttare l'interfaccia di upload plugin disponibile nel pannello di amministrazione di Liferay, dove è possibile, tramite un form, uploadare un eseguibile direttamente senza avere accesso al filesystem del container dove è presente l'installazione di Liferay.
+
+Quindi, per installare un plugin, basta inviare la giusta richiesta **HTTP** al giusto endpoint del pannello di Liferay dopo aver ottenuto un **Authentication Token**.  Per fare questo ho creato delle richieste HTTP usando **Postman**, per poi tradurle in una serie di richiete `curl` via Pipeline in modo da farlo automaticamente per ogni plugin rilasciato.
+
+Sono necessarie 2 chiamate `curl` per eseguire un upload:
+
+```bash
+curl -X GET \
+${env.CONTAINER_URL} \
+-H 'Authorization: Basic ${env.CONTAINER_USER}' \		
+-H 'cache-control: no-cache' \
+-c cookies
+```
+
+Nella chiamata ho usato basic auth
+
+
 
 ...
 
