@@ -105,7 +105,7 @@ Se si desidera creare un container per un servizio di cui si ha bisogno, di soli
 
 ## Sonar
 
-## Git ?
+## Gitlab
 
 - repository
 - branch
@@ -232,8 +232,6 @@ Per fare questo utilizza un algoritmo ricorsivo che:
 - Identifica quanti plugins si intende rilasciare
 - Identifica il tipo di ogni plugin da rilasciare (Modulo, Tema o Layout)
 
- 
-
 #### Risoluzione di problemi di dipendenze dovuti al rilascio contemporaneo
 
 Uno dei problemi più grandi del progetto si è rivelato la risoluzione dei problemi di dipendenze dovuti al rilascio contemporaneo di plugins.
@@ -280,15 +278,60 @@ Quindi, per installare un plugin, basta inviare la giusta richiesta **HTTP** al 
 
 Sono necessarie 2 chiamate `curl` per eseguire un upload:
 
-```bash
-curl -X GET \
-${env.CONTAINER_URL} \
--H 'Authorization: Basic ${env.CONTAINER_USER}' \		
--H 'cache-control: no-cache' \
--c cookies
+```groovy
+def res = sh """
+             curl -X GET \
+             ${env.CONTAINER_URL} \
+             -H 'Authorization: Basic ${env.CONTAINER_USER}' \		
+             -H 'cache-control: no-cache' \
+             -c cookies
+             """
 ```
 
-Nella chiamata ho usato basic auth
+Nella chiamata per semplicità ho usato basic auth, anche se è molto insicuro e va abilitato manualmente su Liferay, perchè tanto il container avrà sempre come utente admin l'utente `test@liferay.com` con password `test`, perchè essendo un container di testing, non contiene nessuna informazione sensibile e deve essere facilmente utilizzabile da molti sviluppatori.
+
+Il risultato della chiamata è tutta la pagina html dell'homepage, quindi va filtrata per ricavarne l'`Authentication Token` che serve per la seconda chiamata.
+
+In **Groovy** l'operatore `=~` serve per eseguire in maniera molto rapida e chiara una **Regular Expression** su un testo in input, che in questo caso è tutta la pagina HTML.
+
+```groovy
+def authToken = (res =~ "Liferay.authToken = '(.*)'")[0][1]
+```
+
+Ora è possibile eseeguire l'upload vero e proprio dentro il Container:
+
+```groovy
+sh """
+	 curl \
+	 -b cookies \
+	 -H 'Authorization: Basic ${env.CONTAINER_USER}' \
+	 -H 'cache-control: no-cache' \
+   -H 'Content-Type: multipart/form-data' \
+	 -F '${path}=${valPath}' \
+	 -F '${file}=${valFile}' \	
+	 -F 'p_auth=${authToken}' \
+	 -F '${data}=${valData}' \
+	 '${env.CONTAINER_URL}${uploadUrl}'
+   """
+```
+
+
+
+Le variabili `path`, `data`, `file` sono i nomi dei campi del form.
+
+La variabile `valPath` è una costante.
+
+La variabile `valData` continene l'attuale data in formato **UNIX** .
+
+La variabile `valFile` contiene il percorso al file da uploadare nel Container.
+
+In particolare:
+
+```groovy
+def valFile = "@release/${plugin.getFolder()}/${plugin.symbolicName}.${plugin.extension}"
+```
+
+Il nome del file caricato dev'essere per convenzione `symbolicName-version.jar` o `symbolicName-version.war` in base al tipo di plugin. Però come si può vedere il file che carico è nominato `symbolicName.extension`, senza il numero di versione, perchè se caricassi su Liferay un plugin con il numero di versione più aggiornato, non andrebbe a sovrascrivere quello più vecchio, lasciando un plugin in eccesso, che potrebbe causare confusione, in questo modo sono sicuro che, quando viene caricato sul Container, sovrascriverà il vecchio plugin, se presente. 
 
 
 
@@ -302,7 +345,7 @@ Nella chiamata ho usato basic auth
 
 ...
 
-### Funzionamento
+### Funzionamento della Pipeline
 
 Per avviare la Pipeline sono necessarie le seguenti configurazioni:
 
