@@ -216,6 +216,72 @@ Per poter utilizzare la vecchia Pipeline occorreva andare sull'interfaccia di Je
 
 Uno degli obbiettivi del progetto era creare una Pipeline unica che potesse essere utilizzato per qualsiasi progetto, dividendo le configurazioni necessarie in: 
 
+Così facendo si è potuto organizzare meglio l'interfaccia di Jenkins, che si stava intasando di Pipeline, e semplificare l'integrazione DevOps per ogni progetto.
+
+#### Possibilità di rilasciare multipli plugins contemporaneamente
+
+Uno delle comodità d'uso che ha portato la nuova Pipeline è il rilascio di multipli plugins contemporaneamente.
+
+Con la nuova pipeline è possibile specificare il nome della cartella da rilasciare, sia che essa contenga un plugin, sia che ne contenga più di uno.
+
+Per fare questo utilizza un algoritmo ricorsivo che: 
+
+- Visita le cartelle del progetto
+- Identifica quanti plugins si intende rilasciare
+- Identifica il tipo di ogni plugin da rilasciare (Modulo, Tema o Layout)
+
+ 
+
+#### Risoluzione di problemi di dipendenze dovuti al rilascio contemporaneo
+
+Uno dei problemi più grandi del progetto si è rivelato la risoluzione dei problemi di dipendenze dovuti al rilascio contemporaneo di plugins.
+
+In particolare il problema si riscontrava quando si intendeva rilasciare dei moduli con delle dipendenze del tipo:
+
+```
+Modulo_1;Modulo_2
+(dove Modulo_1 dipende da Modulo_2)
+```
+
+Questo generava un output del tipo:
+
+```
+Compilazione di Modulo_1 -> Errore
+Compilazione di Modulo_2 -> Successo
+```
+
+E per rilasciarli entrambi bisognava rilanciare la Pipeline una seconda volta, ora che `Modulo_2` è stato compilato.
+
+Questo era un grosso problema se si intendeva rilasciare un progetto intero (per esempio rilasciando tutta la cartella `modules`), in quanto era necessario rilanciare più di una volta la stessa Pipeline, sprecando risorse e tempo.
+
+La soluzione che si è adottato è l'aggiunta di un campo `priority` dentro la classe Plugin che stà ad indicare se il plugin dipende da altri plugin con il quale sta per essere rilasciato, per esempio:
+
+```
+priority = 1		->		Plugin non dipende da nessun altro
+priority = 2		->		Plugin dipende da un plugin
+priority = n		->		Plugin dipende da n plugins
+```
+
+E poi si procedeva a compilare tutti i plugins in sequenza a seconda della priorità (Naturalmente tutti i plugin con la stessa priorità vengono compilati in parallelo).
+
+Per ottenere il campo `priority` è stato necessario cercare manualmente nelle dipendenze contenute nel file `build.gradle` di ogni modulo e confrontarle con la lista dei plugin in rilascio.  
+
+#### Uploading del plugin rilasciato in un Docker Container già istanziato con la corretta versione di Liferay
+
+...
+
+#### Test via Telnet dello stato di installazione del plugin
+
+...
+
+#### Error reporting per facilitarne il debug
+
+...
+
+### Funzionamento
+
+Per avviare la Pipeline sono necessarie le seguenti configurazioni:
+
 - Un file `gradle.properties` (che è già presente nella root in un progetto Liferay) con le seguenti configurazioni:
 
   - **major.version**:
@@ -310,70 +376,6 @@ test-module;test-theme;test-layout
     Se vuoi controllare lo stato di installazione del plugin all'interno del Docker Container, tramite telnet.
 
     
-
-  Così facendo si è potuto organizzare meglio l'interfaccia di Jenkins, che si stava intasando di Pipeline, e semplificare l'integrazione DevOps per ogni progetto.
-
-#### Possibilità di rilasciare multipli plugins contemporaneamente
-
-Uno delle comodità d'uso che ha portato la nuova Pipeline è il rilascio di multipli plugins contemporaneamente.
-
-Con la nuova pipeline è possibile specificare il nome della cartella da rilasciare, sia che essa contenga un plugin, sia che ne contenga più di uno.
-
-Per fare questo utilizza un algoritmo ricorsivo che: 
-
-- Visita le cartelle del progetto
-- Identifica quanti plugins si intende rilasciare
-- Identifica il tipo di ogni plugin da rilasciare (Modulo, Tema o Layout)
-
- 
-
-#### Risoluzione di problemi di dipendenze dovuti al rilascio contemporaneo
-
-Uno dei problemi più grandi del progetto si è rivelato la risoluzione dei problemi di dipendenze dovuti al rilascio contemporaneo di plugins.
-
-In particolare il problema si riscontrava quando si intendeva rilasciare dei plugins con delle dipendenze del tipo:
-
-```
-Plugin_1;Plugin_2
-(dove Plugin_1 dipende da Plugin_2)
-```
-
-Questo generava un output del tipo:
-
-```
-Compilazione di Plugin_1 -> Errore
-Compilazione di Plugin_2 -> Successo
-```
-
-E per rilasciarli entrambi bisognava rilanciare la Pipeline una seconda volta, ora che Plugin_2 è stato compilato.
-
-Questo era un grosso problema se si intendeva rilasciare un progetto intero (per esempio rilasciando tutta la cartella `modules`), in quanto era necessario rilanciare più di una volta la stessa Pipeline, sprecando risorse e tempo.
-
-La soluzione che si è adottato è l'aggiunta di un campo `priority` dentro la classe Plugin che stà ad indicare se il plugin dipende da altri plugin con il quale sta per essere rilasciato, per esempio:
-
-```
-priority = 1		->		Plugin non dipende da nessun altro
-priority = 2		->		Plugin dipende da un plugin
-priority = n		->		Plugin dipende da n plugins
-```
-
-E poi si procedeva a compilare tutti i plugins in sequenza a seconda della priorità (Naturalmente tutti i plugin con la stessa priorità vengono compilati in parallelo).
-
-Per ottenere il campo `priority` è stato necessario cercare manualmente nelle dipendenze contenute nel file `build.gradle` di ogni modulo e confrontarle con la lista dei plugin in rilascio.  
-
-#### Uploading del plugin rilasciato in un Docker Container già istanziato con la corretta versione di Liferay
-
-
-
-- Test via Telnet dello stato di installazione del plugin
-
-- Error reporting per facilitarne il debug
-
-  
-
-### Funzionamento
-
-- - 
 
 Ora inizieremo a descrivere ogni *step* della pipeline, spiegheremo che problema risolve e come lo risolve.
 
