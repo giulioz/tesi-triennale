@@ -6,13 +6,22 @@
 
 Delle pipeline Jenkins per il CI/CD (Continuous Integration/Continuous Delivery) di plugins Liferay utlizzando un cluster Kubernetes come ambiente di deploy automatico. Grazie ad esse è possibile eseguire una serie di operazioni automatiche come: analisi statica del codice, versionamento, building, backup dell'eseguibile, deploy di un Docker container con i plugins appena rilasciati.
 
-
+[TOC]
 
 ## Introduzione
 
 ### L'Azienda
 
+![img](https://www.smc.it/image/layout_set_logo?img_id=945552&t=1565713145713)
 
+**SMC Treviso s.r.l.** è una azienda di Villorba (TV) che opera nel campo dell'Information Technology da più di 30 anni. Attualmente si occupa di vari ambiti:
+
+- Sviluppo di software **Gestonale ERP** e **CRM**
+- Sviluppo di portali web **Liferay** (di cui è anche Platinum Partner)
+- Assistenza Sistemistica
+- Analisi e sviluppo di software per l'IoT e la Digital Transformation
+
+Nei mesi di Giugno e Luglio 2019 ho svolto uno stage presso l'azienda, entrando come supporto per la parte sviluppo Liferay.
 
 ### Il Progetto
 
@@ -22,9 +31,21 @@ Delle pipeline Jenkins per il CI/CD (Continuous Integration/Continuous Delivery)
 
 ## Strumenti Utilizzati
 
-## Liferay
+## Liferay DXP
+
+![Il logo di Liferay](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Liferay-logo-full-color-2x.png/800px-Liferay-logo-full-color-2x.png)
+
+**Liferay Digital Experience Platform** (DXP) è una piattaforma per la Digital Experience e per la realizzazione di portali web. È scritta principalmente in Java, e funziona mediante Apache Tomcat. In alternativa, supporta anche server JBoss o WebLogic.
+
+### Architettura
+
+- parla di come gli serva un db, elastic, ecc
+- parla di come far partire il server
+- parla brevemente dei moduli, di osgi e dei temi, e di come fare i deploy
 
 ## Docker
+
+![Logo docker](https://i.pinimg.com/originals/4e/73/01/4e7301538895cdc19b0eb5f2a3b60730.png)
 
 **Docker** è un progetto open-source che permette di automatizzare il deployment di applicazioni all'interno di **Container** software, che sono tra loro indipendenti anche se coesistono sulla stessa macchina.
 
