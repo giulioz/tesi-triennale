@@ -12,7 +12,16 @@ Delle pipeline Jenkins per il CI/CD (Continuous Integration/Continuous Delivery)
 
 ### L'Azienda
 
+![img](https://www.smc.it/image/layout_set_logo?img_id=945552&t=1565713145713)
 
+**SMC Treviso s.r.l.** è una azienda di Villorba (TV) che opera nel campo dell'Information Technology da più di 30 anni. Attualmente si occupa di vari ambiti:
+
+- Sviluppo di software **Gestonale ERP** e **CRM**
+- Sviluppo di portali web **Liferay** (di cui è anche Platinum Partner)
+- Assistenza Sistemistica
+- Analisi e sviluppo di software per l'IoT e la Digital Transformation
+
+Nei mesi di Giugno e Luglio 2019 ho svolto uno stage presso l'azienda, entrando come supporto per la parte sviluppo Liferay.
 
 ### Il Progetto
 
