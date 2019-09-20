@@ -37,6 +37,12 @@ Nei mesi di Giugno e Luglio 2019 ho svolto uno stage presso l'azienda, entrando 
 
 **Liferay Digital Experience Platform** (DXP) è una piattaforma per la Digital Experience e per la realizzazione di portali web. È scritta principalmente in Java, e funziona mediante Apache Tomcat. In alternativa, supporta anche server JBoss o WebLogic.
 
+### Architettura
+
+- parla di come gli serva un db, elastic, ecc
+- parla di come far partire il server
+- parla brevemente dei moduli, di osgi e dei temi, e di come fare i deploy
+
 ## Docker
 
 ![Logo docker](https://i.pinimg.com/originals/4e/73/01/4e7301538895cdc19b0eb5f2a3b60730.png)
