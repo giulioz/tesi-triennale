@@ -333,13 +333,44 @@ def valFile = "@release/${plugin.getFolder()}/${plugin.symbolicName}.${plugin.ex
 
 Il nome del file caricato dev'essere per convenzione `symbolicName-version.jar` o `symbolicName-version.war` in base al tipo di plugin. Però come si può vedere il file che carico è nominato `symbolicName.extension`, senza il numero di versione, perchè se caricassi su Liferay un plugin con il numero di versione più aggiornato, non andrebbe a sovrascrivere quello più vecchio, lasciando un plugin in eccesso, che potrebbe causare confusione, in questo modo sono sicuro che, quando viene caricato sul Container, sovrascriverà il vecchio plugin, se presente. 
 
+#### Test via Telnet sul Container
 
+Un' altra feature importante è il test del plugin appena installato nel container utlizzando **Telnet**.
 
-...
+>  Telnet è un protocollo per la comunicazione di messaggi testuali, normalmente tra un client e un server, utlizzato via Internet o rete locale (LAN).
 
-#### Test via Telnet dello stato di installazione del plugin
+Anche se *Telnet* è considerato un protocollo molto insicuro, per via della sua mancanza di una forma di crittografia nei suoi messaggi, è la maniera più semplice di gestire un installazione Liferay, dato che liferay mette a disposizione una console chiamata **Felix Gogo Shell**, accessibil solo via Telnet. Con questa console è possibile eseguire alcuni task di gestione di Liferay, come: 
 
-...
+- Elencare la lista di plugin installati con i relativi status (Funzionante o non funzionante), utilizzando il comando `lb`
+- Avviare o spegnere Liferay con i comandi `start` e `stop`
+- Disinstallare un specifico plugin con il comando `unistall`
+- ...
+
+Per interagire con telnet avendo automaticamente ho utilizzato un **Expect Script**, cioè un script che ti permette di automatizzare una conversazione, in questo caso Telnet, in modo da poter ricavare i dati che ci servono per verificare lo stato d'installazione dei plugins appena caricati.
+
+Questo è l'Expect Script che ho utlizzato per comunicare con il Container:
+
+```bash
+#!/usr/bin/expect
+set timeout 10
+spawn telnet ${env.CONTAINER_URL} 11311
+expect "_______"
+expect "Welcome"
+send -- "lb -s\r"
+sleep 2
+send -- "disconnect\r"
+expect "Disconnect"
+send  -- "y\r"
+expect "Connection"
+```
+
+- `set timeout 10` serve per settare un tempo massimo 10 secondi per essere sicuri che lo script termini.
+- `spawn telnet localhost 11311` serve per iniziare la comunicazione Telnet con il Container (11311 è la porta di default di Liferay per il telnet).
+- `expect "Stringa"` serve per aspettare che il server risponda con la Stringa fornita in input, per poi procedere con lo script.
+- `send -- "Messaggio"` serve per inviare un messaggio via Telnet, proprio come farebbe l'input da tastiera. 
+- `sleep 2`  serve per aspettare prima di eseguire la prossima istruzione. È necessario aspettare perchè il server potrebbe metterci qualche milisecondo per rispondere al comando `lb` e due secondi sono più che sufficienti.  
+
+Una volta terminata l'esecuzione dello script, nella pipeline sarà disponibile l'intera conversazione sotto forma di stringa, che viene poi filtrata per ottenere lo status dei plugins installati.
 
 #### Error reporting per facilitarne il debug
 
@@ -505,3 +536,9 @@ checkout(
 ## Souces
 
 https://www.docker.com/ 
+
+https://en.wikipedia.org/wiki/Telnet
+
+https://portal.liferay.dev/docs/7-0/reference/-/knowledge_base/r/using-the-felix-gogo-shell
+
+https://en.wikipedia.org/wiki/Expect
