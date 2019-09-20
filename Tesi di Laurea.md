@@ -39,6 +39,8 @@ Nei mesi di Giugno e Luglio 2019 ho svolto uno stage presso l'azienda, entrando 
 
 ## Docker
 
+![Logo docker](https://i.pinimg.com/originals/4e/73/01/4e7301538895cdc19b0eb5f2a3b60730.png)
+
 **Docker** è un progetto open-source che permette di automatizzare il deployment di applicazioni all'interno di **Container** software, che sono tra loro indipendenti anche se coesistono sulla stessa macchina.
 
 ### Cos'è un Container
