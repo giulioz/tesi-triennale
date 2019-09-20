@@ -31,7 +31,11 @@ Nei mesi di Giugno e Luglio 2019 ho svolto uno stage presso l'azienda, entrando 
 
 ## Strumenti Utilizzati
 
-## Liferay
+## Liferay DXP
+
+![Il logo di Liferay](https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Liferay-logo-full-color-2x.png/800px-Liferay-logo-full-color-2x.png)
+
+**Liferay Digital Experience Platform** (DXP) è una piattaforma per la Digital Experience e per la realizzazione di portali web. È scritta principalmente in Java, e funziona mediante Apache Tomcat. In alternativa, supporta anche server JBoss o WebLogic.
 
 ## Docker
 
